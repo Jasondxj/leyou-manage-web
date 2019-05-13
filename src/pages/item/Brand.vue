@@ -1,71 +1,73 @@
 <template>
-  <v-card>
-    <v-card-title>
-      <v-btn @click="addBrand" color="primary">新增品牌</v-btn>
-      <v-spacer/>
-      <v-text-field
-        append-icon="search"
-        label="搜索"
-        single-line
-        hide-details
-        v-model="search"
-      />
-    </v-card-title>
-    <v-divider/>
-    <v-data-table
-      :headers="headers"
-      :items="items"
-      :pagination.sync="pagination"
-      :total-items="totalItems"
-      :loading="loading"
-      class="elevation-1"
-    >
-      <template slot="items" slot-scope="props">
-        <td class="text-xs-center">{{ props.item.id }}</td>
-        <td class="text-xs-center">{{ props.item.name }}</td>
-        <td class="text-xs-center"><img v-if="!!props.item.image" width="102" height="36" :src="props.item.image"/></td>
-        <td class="text-xs-center">{{ props.item.letter }}</td>
-        <td class="justify-center layout px-0">
-          <v-btn icon @click="editBrand(props.item)">
-            <i class="el-icon-edit"/>
-          </v-btn>
-          <v-btn icon @click="deleteBrand(props.item)">
-            <i class="el-icon-delete"/>
-          </v-btn>
-        </td>
-      </template>
-      <template slot="expand" slot-scope="props">
-        <v-card flat>
-          <v-card-text>Peek-a-boo!</v-card-text>
+  <div>
+    <v-card>
+      <v-card-title>
+        <v-btn @click="addBrand" color="primary">新增品牌</v-btn>
+        <v-spacer/>
+        <v-text-field
+          append-icon="search"
+          label="搜索"
+          single-line
+          hide-details
+          v-model="search"
+        />
+      </v-card-title>
+      <v-divider/>
+      <v-data-table
+        :headers="headers"
+        :items="items"
+        :pagination.sync="pagination"
+        :total-items="totalItems"
+        :loading="loading"
+        class="elevation-1"
+      >
+        <template slot="items" slot-scope="props">
+          <td class="text-xs-center">{{ props.item.id }}</td>
+          <td class="text-xs-center">{{ props.item.name }}</td>
+          <td class="text-xs-center"><img :src="props.item.image" width="102" height="36" :src="props.item.image"/>
+          </td>
+          <td class="text-xs-center">{{ props.item.letter }}</td>
+          <td class="justify-center layout px-0">
+            <v-btn icon @click="editBrand(props.item)">
+              <i class="el-icon-edit"/>
+            </v-btn>
+            <v-btn icon @click="deleteBrand(props.item)">
+              <i class="el-icon-delete"/>
+            </v-btn>
+          </td>
+        </template>
+        <template slot="expand" slot-scope="props">
+          <v-card flat>
+            <v-card-text>Peek-a-boo!</v-card-text>
+          </v-card>
+        </template>
+        <template slot="no-data">
+          <v-alert :value="true" color="error" icon="warning">
+            对不起，没有查询到任何数据 :(
+          </v-alert>
+        </template>
+        <template slot="pageText" slot-scope="props">
+          共{{props.itemsLength}}条,当前:{{ props.pageStart }} - {{ props.pageStop }}
+        </template>
+      </v-data-table>
+
+      <v-dialog v-model="show" max-width="600" scrollable v-if="show">
+        <v-card>
+          <v-toolbar dark dense color="primary">
+            <v-toolbar-title>{{isEdit ? '修改品牌' : '新增品牌'}}</v-toolbar-title>
+            <v-spacer/>
+            <v-btn icon @click="show = false">
+              <v-icon>close</v-icon>
+            </v-btn>
+          </v-toolbar>
+          <v-card-text class="px-5 py-2">
+            <!-- 表单 -->
+            <brand-form :oldBrand="brand" :isEdit="isEdit" @close="show = false" :reload="getDataFromApi"/>
+          </v-card-text>
         </v-card>
-      </template>
-      <template slot="no-data">
-        <v-alert :value="true" color="error" icon="warning">
-          对不起，没有查询到任何数据 :(
-        </v-alert>
-      </template>
-      <template slot="pageText" slot-scope="props">
-        共{{props.itemsLength}}条,当前:{{ props.pageStart }} - {{ props.pageStop }}
-      </template>
-    </v-data-table>
-
-    <v-dialog v-model="show" max-width="600" scrollable v-if="show">
-      <v-card>
-        <v-toolbar dark dense color="primary">
-          <v-toolbar-title>{{isEdit ? '修改品牌' : '新增品牌'}}</v-toolbar-title>
-          <v-spacer/>
-          <v-btn icon @click="show = false">
-            <v-icon>close</v-icon>
-          </v-btn>
-        </v-toolbar>
-        <v-card-text class="px-5 py-2">
-          <!-- 表单 -->
-          <brand-form :oldBrand="brand" :isEdit="isEdit" @close="show = false" :reload="getDataFromApi"/>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
-  </v-card>
-
+      </v-dialog>
+    </v-card>
+  </div>
 </template>
 
 <script>
@@ -92,18 +94,21 @@
           {text: '操作', align: 'center', value: 'id', sortable: false}
         ],
         show: false,// 是否弹出窗口
-        brand: {}, // 品牌信息
+        // brand: {}, // 品牌信息
         isEdit: false // 判断是编辑还是新增
       }
     },
+    created(){
+      this.getDataFromApi();
+    },
     watch: {
-      pagination: {
-        handler() {
-          this.getDataFromApi();
-        },
-        deep: true
-      },
       search: {
+        handler() {
+          this.pagination.page=1;
+        }
+      },
+      pagination: {
+        deep: true,
         handler() {
           this.getDataFromApi();
         }
@@ -157,17 +162,17 @@
         //   this.totalItems = 100
         //   this.loading = false;
         // }, 200)
-        this.$http.get("/item/brand/page",{
-          params:{
-            page:this.pagination.page,  //当前页
-            rows:this.pagination.rowsPerPage,  //每页显示条数
-            sortBy:this.pagination.sortBy,  //排序字段
-            desc:this.pagination.descending,  //升序or降序
-            key:this.search  //条件
+        this.$http.get("/item/brand/page", {
+          params: {
+            page: this.pagination.page,  //当前页
+            rows: this.pagination.rowsPerPage,  //每页显示条数
+            sortBy: this.pagination.sortBy,  //排序字段
+            desc: this.pagination.descending,  //升序or降序
+            key: this.search  //条件
           }
-        }).then(resp =>{
-          this.items=resp.data.items;
-          this.totalItems=resp.data.total;
+        }).then(resp => {
+          this.items = resp.data.items;
+          this.totalItems = resp.data.total;
           this.loading = false;
         })
 
