@@ -5,7 +5,7 @@
       <!--搜索框，与search属性关联-->
       <v-spacer/>
       <v-flex xs3>
-      <v-text-field label="输入关键字搜索" v-model.lazy="search" append-icon="search" hide-details/>
+        <v-text-field label="输入关键字搜索" v-model.lazy="search" append-icon="search" hide-details/>
       </v-flex>
     </v-card-title>
     <v-divider/>
@@ -43,7 +43,9 @@
           <v-toolbar-title>{{isEdit ? '修改' : '新增'}}品牌</v-toolbar-title>
           <v-spacer/>
           <!--关闭窗口的按钮-->
-          <v-btn icon @click="closeWindow"><v-icon>close</v-icon></v-btn>
+          <v-btn icon @click="closeWindow">
+            <v-icon>close</v-icon>
+          </v-btn>
         </v-toolbar>
         <!--对话框的内容，表单-->
         <v-card-text class="px-5" style="height:400px">
@@ -93,10 +95,27 @@
       },
       search: { // 监视搜索字段
         handler() {
-          this.pagination.page=1;
+          this.pagination.page = 1;
           this.getDataFromServer();
         }
       }
+    },
+    oldBrand: {// 监控oldBrand的变化
+      handler(val) {
+        if (val) {
+          // 注意不要直接复制，否则这边的修改会影响到父组件的数据，copy属性即可
+          this.brand = Object.deepCopy(val)
+        } else {
+          // 为空，初始化brand
+          this.brand = {
+            name: '',
+            letter: '',
+            image: '',
+            categories: [],
+          }
+        }
+      },
+      deep: true
     },
     methods: {
       getDataFromServer() { // 从服务的加载数的方法。
@@ -124,13 +143,15 @@
         // 把oldBrand变为null
         this.oldBrand = null;
       },
-      editBrand(oldBrand){
+      editBrand(oldBrand) {
+        // 修改标记
+        this.isEdit = true;
+        // 控制弹窗可见：
+        this.show = true;
+        this.oldBrand = oldBrand;
         // 根据品牌信息查询商品分类
         this.$http.get("/item/category/bid/" + oldBrand.id)
           .then(({data}) => {
-            // 修改标记
-            this.isEdit = true;
-            // 控制弹窗可见：
             this.show = true;
             // 获取要编辑的brand
             this.oldBrand = oldBrand
@@ -138,15 +159,15 @@
             this.oldBrand.categories = data;
           })
       },
-      closeWindow(){
+      closeWindow() {
         // 重新加载数据
         this.getDataFromServer();
         // 关闭窗口
         this.show = false;
       }
     },
-    components:{
-        BrandForm
+    components: {
+      BrandForm
     }
   }
 </script>
